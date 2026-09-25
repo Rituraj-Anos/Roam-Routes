@@ -165,38 +165,71 @@ alter table blog_posts     enable row level security;
 alter table site_settings  enable row level security;
 alter table admin_users    enable row level security;
 
+-- Policies are dropped-if-exists first so this whole file is safe to re-run.
+-- Postgres has no "create policy if not exists", so we guard each one.
+
 -- Public read on published content -----------------------------
+drop policy if exists "public read published packages" on packages;
 create policy "public read published packages" on packages
   for select using (status = 'published' or is_admin());
 
+drop policy if exists "public read itinerary of published" on itinerary_days;
 create policy "public read itinerary of published" on itinerary_days
   for select using (
     exists (select 1 from packages p where p.id = package_id and (p.status = 'published' or is_admin()))
   );
 
+drop policy if exists "public read departures" on departures;
 create policy "public read departures" on departures for select using (true);
+
+drop policy if exists "public read visible reviews" on reviews;
 create policy "public read visible reviews" on reviews
   for select using (visible = true or is_admin());
+
+drop policy if exists "public read media" on media_assets;
 create policy "public read media" on media_assets for select using (true);
+
+drop policy if exists "public read published blog" on blog_posts;
 create policy "public read published blog" on blog_posts
   for select using (published_at is not null or is_admin());
+
+drop policy if exists "public read settings" on site_settings;
 create policy "public read settings" on site_settings for select using (true);
 
 -- Admin-only writes -------------------------------------------
+drop policy if exists "admin write packages" on packages;
 create policy "admin write packages" on packages for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "admin write itinerary" on itinerary_days;
 create policy "admin write itinerary" on itinerary_days for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "admin write departures" on departures;
 create policy "admin write departures" on departures for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "admin write reviews" on reviews;
 create policy "admin write reviews" on reviews for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "admin write media" on media_assets;
 create policy "admin write media" on media_assets for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "admin write blog" on blog_posts;
 create policy "admin write blog" on blog_posts for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "admin write settings" on site_settings;
 create policy "admin write settings" on site_settings for all using (is_admin()) with check (is_admin());
 
 -- Inquiries: anyone can create (public form), admins read/update ----
+drop policy if exists "public create inquiry" on inquiries;
 create policy "public create inquiry" on inquiries for insert with check (true);
+
+drop policy if exists "admin read inquiries" on inquiries;
 create policy "admin read inquiries" on inquiries for select using (is_admin());
+
+drop policy if exists "admin update inquiries" on inquiries;
 create policy "admin update inquiries" on inquiries for update using (is_admin()) with check (is_admin());
 
 -- Admin users: readable by admins only
+drop policy if exists "admin read admin_users" on admin_users;
 create policy "admin read admin_users" on admin_users for select using (is_admin());
 
 -- ---------- updated_at trigger ----------
