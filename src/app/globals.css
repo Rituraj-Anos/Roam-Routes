@@ -384,3 +384,152 @@ body {
     color: #fff;
   }
 }
+
+/* ============================================================
+   Elevation
+
+   A small, deliberate scale rather than ad-hoc shadows per
+   component. Shadows are warm-tinted and layered (a tight
+   contact shadow plus a soft ambient one), which reads as real
+   light rather than a grey blur.
+   ============================================================ */
+
+.elev-1 {
+  box-shadow:
+    0 1px 2px -1px rgb(16 24 26 / 0.08),
+    0 2px 8px -3px rgb(16 24 26 / 0.06);
+}
+
+.elev-2 {
+  box-shadow:
+    0 2px 4px -2px rgb(16 24 26 / 0.1),
+    0 12px 28px -12px rgb(16 24 26 / 0.14);
+}
+
+.elev-3 {
+  box-shadow:
+    0 4px 8px -4px rgb(16 24 26 / 0.12),
+    0 24px 48px -20px rgb(16 24 26 / 0.2);
+}
+
+/* On dark surfaces, elevation reads as a light edge, not a shadow */
+.elev-dark {
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06),
+    0 20px 50px -24px rgb(0 0 0 / 0.7);
+}
+
+/* ============================================================
+   Section seams
+
+   Where a dark section meets a light one, a hard edge looks
+   abrupt. A short gradient lets the two resolve into each other.
+   ============================================================ */
+
+.seam-to-light {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-ink),
+    var(--color-cream)
+  );
+}
+
+.seam-to-dark {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-cream),
+    var(--color-ink)
+  );
+}
+
+/* ============================================================
+   Skeleton / shimmer for loading states
+   ============================================================ */
+
+@keyframes shimmer {
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-line) 60%, transparent);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translate3d(-100%, 0, 0);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.45),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Ambient motion
+
+   A gentle float for decorative elements. Long period so it
+   never reads as a distracting loop.
+   ============================================================ */
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+.animate-float {
+  animation: float-soft 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Typographic detail
+   ============================================================ */
+
+/* Numbers in tables, prices and counters must not shift width */
+.nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Hanging quotes so a pull-quote's mark sits outside the measure */
+.quote-hang {
+  text-indent: -0.38em;
+}
+
+/* Underline that grows from the left on hover, gated to fine pointers */
+@media (hover: hover) and (pointer: fine) {
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size var(--dur-base) var(--ease-out);
+  }
+  .link-underline:hover {
+    background-size: 100% 1px;
+  }
+}

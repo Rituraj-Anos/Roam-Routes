@@ -11,3 +11,7 @@ next-env.d.ts
 # Local JSON store and admin uploads (runtime data, not source)
 .data
 public/uploads
+
+# MCP config holds an API key — never commit it
+.kiro/settings/mcp.json
+**/mcp.json

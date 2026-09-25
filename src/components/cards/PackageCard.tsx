@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Clock, MapPin, ArrowUpRight } from "lucide-react";
 import type { Package } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
 
 /**
  * Package card: full-bleed photo, duration pill top-left, title and price below.
@@ -19,7 +20,7 @@ export function PackageCard({ pkg }: { pkg: Package }) {
   return (
     <Link
       href={`/tours/${pkg.slug}`}
-      className="hover-lift group flex h-full flex-col overflow-hidden rounded-[var(--radius-xl2)] bg-[var(--color-paper)] ring-1 ring-[var(--color-line)] hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.25)]"
+      className="hover-lift elev-1 group flex h-full flex-col overflow-hidden rounded-[var(--radius-xl2)] bg-[var(--color-paper)] ring-1 ring-[var(--color-line)] transition-shadow hover:[box-shadow:0_4px_8px_-4px_rgb(16_24_26/0.12),0_24px_48px_-20px_rgb(16_24_26/0.2)]"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
@@ -34,18 +35,20 @@ export function PackageCard({ pkg }: { pkg: Package }) {
           aria-hidden
           className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/45 to-transparent"
         />
-        <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-black/45 px-2.5 py-1 text-[0.75rem] font-medium text-white backdrop-blur-md">
+        <Badge tone="onPhoto" className="absolute left-3.5 top-3.5">
           <Clock className="size-3.5" strokeWidth={1.75} aria-hidden />
-          {pkg.durationNights}N / {pkg.durationDays}D
-        </span>
-        <span className="absolute right-3.5 top-3.5 inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-black/45 px-2.5 py-1 text-[0.75rem] font-medium text-white backdrop-blur-md">
+          <span className="nums">
+            {pkg.durationNights}N / {pkg.durationDays}D
+          </span>
+        </Badge>
+        <Badge tone="onPhoto" className="absolute right-3.5 top-3.5">
           <MapPin className="size-3.5" strokeWidth={1.75} aria-hidden />
           {pkg.region}
-        </span>
+        </Badge>
         {seatsTight && (
-          <span className="absolute bottom-3.5 left-3.5 rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-2.5 py-1 text-[0.75rem] font-semibold text-white">
+          <Badge tone="scarcity" className="absolute bottom-3.5 left-3.5 font-semibold">
             {seatsTight.totalSeats - seatsTight.bookedSeats} seats left
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -58,7 +61,7 @@ export function PackageCard({ pkg }: { pkg: Package }) {
         <div className="mt-5 flex items-end justify-between border-t border-[var(--color-line)] pt-4">
           <div>
             <span className="t-small text-[var(--color-body-soft)]">From</span>
-            <p className="font-display text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-teal-800)]">
+            <p className="font-display nums text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-teal-800)]">
               {formatPrice(pkg.priceFrom)}
             </p>
           </div>
