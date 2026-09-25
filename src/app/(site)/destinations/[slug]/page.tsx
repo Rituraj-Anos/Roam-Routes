@@ -17,9 +17,12 @@ import { ClosingCta } from "@/components/sections/ClosingCta";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
 import { PillArrow } from "@/components/ui/PillArrow";
 import { destinations, getDestination } from "@/data/destinations";
-import { publishedPackages } from "@/data/packages";
 import { homestays } from "@/data/homestays";
+import { getPackagesByRegion } from "@/lib/store/queries";
 import { formatPrice } from "@/lib/utils";
+
+// Trips shown here come from the live store.
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return destinations.map((d) => ({ slug: d.slug }));
@@ -45,7 +48,7 @@ export default async function DestinationDetail({
   const dest = getDestination(slug);
   if (!dest) notFound();
 
-  const trips = publishedPackages().filter((p) => p.region === dest.name);
+  const trips = await getPackagesByRegion(dest.name);
   const stays = homestays.filter((h) => h.region === dest.name);
   const others = destinations.filter((d) => d.slug !== dest.slug);
 

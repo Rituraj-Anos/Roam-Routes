@@ -5,11 +5,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, ArrowUpRight } from "lucide-react";
 import { Section } from "@/components/ui/Section";
 import { ClosingCta } from "@/components/sections/ClosingCta";
-import { blogPosts, getBlogPost } from "@/data/content";
+import { getPublicPost, getPublishedPosts } from "@/lib/store/queries";
 
-export function generateStaticParams() {
-  return blogPosts.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -17,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getPublicPost(slug);
   if (!post) return { title: "Guide" };
   return { title: post.title, description: post.excerpt };
 }
@@ -28,10 +26,12 @@ export default async function BlogDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getPublicPost(slug);
   if (!post) notFound();
 
-  const more = blogPosts.filter((p) => p.slug !== post.slug).slice(0, 3);
+  const more = (await getPublishedPosts())
+    .filter((p) => p.slug !== post.slug)
+    .slice(0, 3);
 
   return (
     <>

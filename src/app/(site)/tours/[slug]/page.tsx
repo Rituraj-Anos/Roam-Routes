@@ -19,15 +19,17 @@ import { ClosingCta } from "@/components/sections/ClosingCta";
 import { PackageCard } from "@/components/cards/PackageCard";
 import { ReviewCard } from "@/components/cards/ReviewCard";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
-import { packages, getPackage, relatedPackages } from "@/data/packages";
 import { getDestination } from "@/data/destinations";
-import { reviews as allReviews } from "@/data/content";
 import { homestays } from "@/data/homestays";
+import {
+  getPublicPackage,
+  getRelatedPackages,
+  getReviewsForPackage,
+} from "@/lib/store/queries";
 import { formatPrice } from "@/lib/utils";
 
-export function generateStaticParams() {
-  return packages.map((p) => ({ slug: p.slug }));
-}
+// Live data: price, seats, itinerary and status all come from the database.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -35,7 +37,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const pkg = getPackage(slug);
+  const pkg = await getPublicPackage(slug);
   if (!pkg) return { title: "Tour" };
   return { title: pkg.title, description: pkg.summary };
 }
@@ -46,11 +48,14 @@ export default async function TourDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const pkg = getPackage(slug);
+  const pkg = await getPublicPackage(slug);
   if (!pkg) notFound();
 
-  const related = relatedPackages(pkg.slug, pkg.region);
-  const pkgReviews = allReviews.filter((r) => r.packageSlug === pkg.slug && r.visible);
+  const [related, pkgReviews] = await Promise.all([
+    getRelatedPackages(pkg.slug, pkg.region),
+    getReviewsForPackage(pkg.slug),
+  ]);
+
   const dest = getDestination(pkg.region.toLowerCase());
   const stays = homestays.filter((h) => h.packageSlug === pkg.slug);
 

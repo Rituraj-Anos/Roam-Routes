@@ -6,7 +6,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { Section } from "@/components/ui/Section";
 import { ClosingCta } from "@/components/sections/ClosingCta";
 import { RevealGroup, RevealItem } from "@/components/ui/Reveal";
-import { blogPosts } from "@/data/content";
+import { getPublishedPosts } from "@/lib/store/queries";
 
 export const metadata: Metadata = {
   title: "Guides",
@@ -14,15 +14,37 @@ export const metadata: Metadata = {
     "North Bengal travel guides. Best time to visit Sikkim, Nathula permit rules, the Darjeeling toy train, and Dooars safari planning.",
 };
 
-export default function BlogPage() {
-  const [lead, ...rest] = blogPosts;
+// Published guides come from the live store.
+export const dynamic = "force-dynamic";
+
+export default async function BlogPage() {
+  const posts = await getPublishedPosts();
+  const [lead, ...rest] = posts;
+
+  // An empty state is better than a crash when nothing is published yet.
+  if (!lead) {
+    return (
+      <>
+        <PageHero
+          title="Plan smarter with local knowledge"
+          intro="Seasons, permits and practical detail, written by the people who travel these routes every month."
+        />
+        <Section tone="cream">
+          <p className="t-body mx-auto max-w-md text-center text-[var(--color-body)]">
+            No guides published yet. Check back shortly.
+          </p>
+        </Section>
+        <ClosingCta />
+      </>
+    );
+  }
 
   return (
     <>
       <PageHero
         title="Plan smarter with local knowledge"
         intro="Seasons, permits and practical detail, written by the people who travel these routes every month."
-        image={blogPosts[0].coverImage}
+        image={lead.coverImage || undefined}
       />
 
       <Section tone="cream">

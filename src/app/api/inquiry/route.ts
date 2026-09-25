@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createInquiry, getSettings } from "@/lib/store/repo";
 
 /**
- * Inquiry intake (PRD §7 Notifications).
- * Persists to Supabase when configured, and fires a Resend email alert.
- * Degrades gracefully in local/dev without those env vars so the form still works.
+ * Public inquiry intake.
+ *
+ * Goes through the repository, so it lands in Postgres when Supabase is
+ * configured and in the local store otherwise. A Resend alert fires when
+ * configured.
+ *
+ * This endpoint always reports success to the browser once validation passes:
+ * WhatsApp is the guaranteed fallback path, and a storage hiccup should not
+ * make a real lead think the agency is broken. Failures are logged server-side.
  */
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -16,35 +22,55 @@ export async function POST(req: Request) {
 
   const name = String(body.name ?? "").trim();
   const whatsapp = String(body.whatsapp ?? "").trim();
-  if (!name || !whatsapp) {
-    return NextResponse.json({ ok: false, error: "Name and WhatsApp are required" }, { status: 422 });
+
+  if (!name) {
+    return NextResponse.json(
+      { ok: false, error: "Please tell us your name" },
+      { status: 422 },
+    );
   }
+  if (whatsapp.replace(/\D/g, "").length < 10) {
+    return NextResponse.json(
+      { ok: false, error: "Enter a number we can reach you on" },
+      { status: 422 },
+    );
+  }
+
+  const paxRaw = String(body.pax ?? "1");
+  const pax = Number.parseInt(paxRaw, 10);
 
   const inquiry = {
     name,
     whatsapp,
-    travel_dates: String(body.travelDates ?? ""),
-    pax: String(body.pax ?? ""),
-    package_slug: String(body.packageSlug ?? "") || null,
-    message: String(body.message ?? ""),
-    status: "New" as const,
-    created_at: new Date().toISOString(),
+    travelDates: String(body.travelDates ?? "").trim(),
+    pax: Number.isFinite(pax) && pax > 0 ? pax : 1,
+    packageSlug: String(body.packageSlug ?? "").trim() || undefined,
+    message: String(body.message ?? "").trim() || undefined,
   };
 
-  // Persist to Supabase if configured
-  const supabase = getSupabaseAdmin();
-  if (supabase) {
-    const { error } = await supabase.from("inquiries").insert(inquiry);
-    if (error) {
-      console.error("Supabase insert failed:", error.message);
-    }
+  try {
+    await createInquiry(inquiry);
+  } catch (e) {
+    console.error("Inquiry save failed:", e);
   }
 
-  // Email alert via Resend if configured
+  // Email alert, best effort. Never blocks the response.
   const resendKey = process.env.RESEND_API_KEY;
   const notify = process.env.INQUIRY_NOTIFY_EMAIL;
+
   if (resendKey && notify) {
     try {
+      const settings = await getSettings().catch(() => null);
+      const lines = [
+        `Name: ${inquiry.name}`,
+        `WhatsApp: ${inquiry.whatsapp}`,
+        `Dates: ${inquiry.travelDates || "not given"}`,
+        `Travellers: ${inquiry.pax}`,
+        `Trip: ${inquiry.packageSlug ?? "not decided"}`,
+        "",
+        inquiry.message ?? "",
+      ];
+
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -54,15 +80,15 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           from: "RoamAndRoutes <onboarding@resend.dev>",
           to: [notify],
-          subject: `New enquiry from ${name}`,
-          text: `Name: ${name}\nWhatsApp: ${whatsapp}\nDates: ${inquiry.travel_dates}\nTravellers: ${inquiry.pax}\nTrip: ${inquiry.package_slug ?? "—"}\n\n${inquiry.message}`,
+          reply_to: settings?.email,
+          subject: `New enquiry from ${inquiry.name}`,
+          text: lines.join("\n"),
         }),
       });
     } catch (e) {
-      console.error("Resend alert failed:", e);
+      console.error("Inquiry alert failed:", e);
     }
   }
 
-  // Always succeed for the client — WhatsApp is the guaranteed fallback.
   return NextResponse.json({ ok: true });
 }

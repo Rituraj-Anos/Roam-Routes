@@ -17,15 +17,34 @@ import { DestinationSpotlight } from "@/components/cards/DestinationSpotlight";
 import { PackageCard } from "@/components/cards/PackageCard";
 import { ReviewCard } from "@/components/cards/ReviewCard";
 import { destinations } from "@/data/destinations";
-import { featuredPackages } from "@/data/packages";
 import { homestays } from "@/data/homestays";
-import { trustStats, whyChooseUs, featuredReviews } from "@/data/content";
+import { trustStats, whyChooseUs } from "@/data/content";
+import {
+  getFeaturedPackages,
+  getFeaturedReviews,
+  getRatingSummary,
+} from "@/lib/store/queries";
 import { formatPrice } from "@/lib/utils";
 
-export default function HomePage() {
-  const packages = featuredPackages();
-  const reviews = featuredReviews();
+// Reads the live store, so what the admin publishes appears here.
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [packages, reviews, rating] = await Promise.all([
+    getFeaturedPackages(3),
+    getFeaturedReviews(3),
+    getRatingSummary(),
+  ]);
+
   const featuredStays = homestays.slice(0, 3);
+
+  // The headline rating figure comes from the reviews the admin actually
+  // publishes, rather than a number hardcoded in a content file.
+  const stats = trustStats.map((s) =>
+    s.label.toLowerCase().includes("rating") && rating.count > 0
+      ? { ...s, value: rating.average }
+      : s,
+  );
 
   return (
     <>
@@ -34,7 +53,7 @@ export default function HomePage() {
 
       {/* Proof band, lifted out of the hero. Compact by design. */}
       <Section tone="dark" size="band" className="border-t border-white/8">
-        <TrustStats stats={trustStats} tone="dark" />
+        <TrustStats stats={stats} tone="dark" />
       </Section>
 
       <Marquee />
@@ -248,8 +267,12 @@ export default function HomePage() {
       {/* Reviews */}
       <Section tone="cream">
         <SectionHeading
-          title="Rated 4.9 by the people who travelled with us"
-          intro="Verified Google reviews from recent trips across all four regions."
+          title={
+            rating.count > 0
+              ? `Rated ${rating.average} by the people who travelled with us`
+              : "What travellers say"
+          }
+          intro="Verified reviews from recent trips across all four regions."
           align="center"
         />
         <RevealGroup className="mt-12 grid gap-6 md:grid-cols-3">
