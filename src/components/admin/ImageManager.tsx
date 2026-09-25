@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   ImagePlus,
   Link2,
@@ -10,7 +11,9 @@ import {
   Star,
   AlertCircle,
   Upload,
+  Loader2,
 } from "lucide-react";
+import { api } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,6 +51,7 @@ export function ImageManager({
 }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const atLimit = max !== undefined && images.length >= max;
@@ -71,7 +75,12 @@ export function ImageManager({
     setUrl("");
   };
 
-  const addFiles = (files: FileList | null) => {
+  /**
+   * Uploads immediately rather than holding a local object URL, so what you see
+   * in the editor is the real stored asset. The endpoint writes to disk in
+   * development and is the single seam to swap for Cloudflare R2.
+   */
+  const addFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const room = max === undefined ? files.length : Math.max(0, max - images.length);
     const picked = Array.from(files)
@@ -79,15 +88,34 @@ export function ImageManager({
       .slice(0, single ? 1 : room);
 
     if (picked.length === 0) {
-      setError("Pick an image file (JPG, PNG or WebP).");
+      setError("Pick an image file (JPG, PNG, WebP or AVIF).");
       return;
     }
     setError(null);
+    setUploading(true);
 
-    // TODO: upload to Cloudflare R2, then replace the object URL with the CDN
-    // URL and clear `pending`.
-    const next = picked.map((f) => ({ url: URL.createObjectURL(f), pending: true }));
-    onChange(single ? next : [...images, ...next]);
+    const uploaded: ManagedImage[] = [];
+    for (const file of picked) {
+      const form = new FormData();
+      form.append("file", file);
+      try {
+        const asset = await api<{ url: string }>("/api/admin/media", {
+          method: "POST",
+          body: form,
+        });
+        uploaded.push({ url: asset.url });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Upload failed");
+      }
+    }
+
+    setUploading(false);
+    if (uploaded.length === 0) return;
+
+    toast.success(
+      uploaded.length === 1 ? "Image uploaded" : `${uploaded.length} images uploaded`,
+    );
+    onChange(single ? uploaded.slice(0, 1) : [...images, ...uploaded]);
   };
 
   const remove = (i: number) => {
@@ -237,10 +265,15 @@ export function ImageManager({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="pressable inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5"
+            disabled={uploading}
+            className="pressable inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5 disabled:opacity-60"
           >
-            <Upload className="size-4" aria-hidden />
-            Upload
+            {uploading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Upload className="size-4" aria-hidden />
+            )}
+            {uploading ? "Uploading" : "Upload"}
           </button>
 
           <input

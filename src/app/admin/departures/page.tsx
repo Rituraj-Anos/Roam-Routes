@@ -1,62 +1,65 @@
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { CalendarClock, ArrowUpRight } from "lucide-react";
 import { AdminHeader, AdminCard } from "@/components/admin/AdminShell";
-import { packages } from "@/data/packages";
-import { seatsLeft } from "@/lib/utils";
+import { DepartureManager } from "@/components/admin/DepartureManager";
+import { listPackages } from "@/lib/store/repo";
 
-export default function AdminDepartures() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminDepartures() {
+  const packages = await listPackages();
+  const withDates = packages.filter((p) => p.status !== "archived");
+  const total = packages.flatMap((p) => p.departures).length;
+  const open = packages
+    .flatMap((p) => p.departures)
+    .filter((d) => d.status === "open").length;
+
   return (
     <>
       <AdminHeader
         title="Departures"
-        subtitle="Fixed dates and live seat counts. Sold-out dates hide their booking CTA on the site."
-        action={
-          <button className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-teal-800)] px-4 py-2.5 text-sm font-semibold text-[var(--color-cream)]">
-            <Plus className="size-4" /> New departure
-          </button>
-        }
+        subtitle={`${total} dates across ${withDates.length} trips · ${open} still open`}
       />
-      <div className="space-y-6">
-        {packages.map((p) => (
-          <AdminCard key={p.id}>
-            <h2 className="font-display mb-4 text-base font-semibold">{p.title}</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-widest text-white/40">
-                    <th className="pb-3 font-medium">Date</th>
-                    <th className="pb-3 font-medium">Seats</th>
-                    <th className="pb-3 font-medium">Left</th>
-                    <th className="pb-3 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {p.departures.map((d) => {
-                    const left = seatsLeft(d.totalSeats, d.bookedSeats);
-                    return (
-                      <tr key={d.id}>
-                        <td className="py-3">
-                          {new Date(d.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                        </td>
-                        <td className="py-3 text-white/60">{d.bookedSeats} / {d.totalSeats}</td>
-                        <td className="py-3">
-                          <span className={left <= 3 && left > 0 ? "text-[var(--color-amber)]" : "text-white/60"}>
-                            {left} left
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${d.status === "open" ? "bg-emerald-500/15 text-emerald-300" : "bg-white/10 text-white/50"}`}>
-                            {d.status === "open" ? "Open" : "Sold out"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+
+      {withDates.length === 0 ? (
+        <AdminCard>
+          <div className="py-12 text-center">
+            <CalendarClock
+              className="mx-auto size-7 text-white/30"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <p className="mt-3 text-sm text-white/50">
+              No active packages to schedule yet.
+            </p>
+            <Link
+              href="/admin/packages"
+              className="pressable mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-accent-soft)]"
+            >
+              Go to packages <ArrowUpRight className="size-3.5" aria-hidden />
+            </Link>
+          </div>
+        </AdminCard>
+      ) : (
+        <div className="space-y-5">
+          {withDates.map((p) => (
+            <div key={p.id}>
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <h2 className="font-display text-sm font-semibold text-white/70">
+                  {p.title}
+                </h2>
+                <Link
+                  href={`/admin/packages/${p.slug}`}
+                  className="text-xs text-white/40 transition-colors hover:text-white"
+                >
+                  Edit trip
+                </Link>
+              </div>
+              <DepartureManager slug={p.slug} departures={p.departures} />
             </div>
-          </AdminCard>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }

@@ -185,6 +185,72 @@ body {
   letter-spacing: 0.005em;
 }
 
+/* ------------------------------------------------------------
+   Film grain.
+
+   Large flat dark areas band visibly where gradients meet, which
+   reads as cheap and empty. A fine noise layer breaks the banding
+   and gives dark surfaces a sense of material. Generated inline so
+   it costs no network request.
+   ------------------------------------------------------------ */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* ------------------------------------------------------------
+   Topographic contour motif.
+
+   A brand-appropriate texture for dark sections: contour lines
+   read as maps and routes. Kept very low contrast so it is felt
+   rather than seen, and it never sits behind body copy.
+   ------------------------------------------------------------ */
+.contours {
+  background-image: radial-gradient(
+      ellipse 62% 48% at 70% 42%,
+      transparent 0,
+      transparent 39%,
+      rgb(255 255 255 / 0.05) 39.4%,
+      transparent 40%,
+      transparent 51%,
+      rgb(255 255 255 / 0.04) 51.4%,
+      transparent 52%,
+      transparent 64%,
+      rgb(255 255 255 / 0.03) 64.4%,
+      transparent 65%,
+      transparent 78%,
+      rgb(255 255 255 / 0.025) 78.4%,
+      transparent 79%
+    ),
+    radial-gradient(
+      ellipse 45% 38% at 22% 76%,
+      transparent 0,
+      transparent 43%,
+      rgb(255 255 255 / 0.04) 43.4%,
+      transparent 44%,
+      transparent 58%,
+      rgb(255 255 255 / 0.03) 58.4%,
+      transparent 59%,
+      transparent 74%,
+      rgb(255 255 255 / 0.022) 74.4%,
+      transparent 75%
+    );
+}
+
+@media (prefers-contrast: more) {
+  .grain::after,
+  .contours {
+    display: none;
+    background-image: none;
+  }
+}
+
 /* ============================================================
    Interaction
    ============================================================ */

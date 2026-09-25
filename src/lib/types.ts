@@ -120,6 +120,17 @@ export interface Inquiry {
   createdAt: string;
 }
 
+/** An uploaded photo or an attached Instagram reel link. */
+export interface MediaAsset {
+  id: string;
+  url: string;
+  type: "photo" | "reel";
+  caption?: string;
+  /** Package this asset is filed under, if any. */
+  packageSlug?: string;
+  createdAt: string;
+}
+
 export interface TrustStat {
   label: string;
   value: string;

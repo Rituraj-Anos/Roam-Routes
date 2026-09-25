@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { PillArrow } from "@/components/ui/PillArrow";
 import { PhotoScatter, type ScatterPhoto } from "@/components/ui/PhotoScatter";
@@ -53,13 +54,38 @@ export function Hero() {
   });
 
   return (
-    <section className="relative isolate overflow-hidden bg-[var(--color-ink)] text-[var(--color-cream)]">
-      {/* Depth wash. Very slow, very low contrast: it should register as depth,
-          never as an animated background. Period is long enough (28s) to stay
-          well clear of the uncomfortable ~5s oscillation range. */}
+    <section className="grain relative isolate overflow-hidden bg-[var(--color-ink)] text-[var(--color-cream)]">
+      {/* ---- Background: photo-led atmosphere ----
+          A real ridgeline sits behind everything, heavily scrimmed and
+          desaturated so it reads as depth rather than competing with the photo
+          stack or the copy. Without it the section is a flat black rectangle. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <Image
+          src={img("1486911278844-a81c5267e227", 1920)}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="scale-105 object-cover object-center opacity-[0.28] saturate-[0.55]"
+        />
+
+        {/* Directional scrim: darkest behind the headline on the left, opening
+            up on the right where the photo stack sits. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-ink)] via-[var(--color-ink)]/85 to-[var(--color-ink)]/45" />
+        {/* Vertical scrim anchors the nav and hands off to the next section */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-ink)]/95 via-transparent to-[var(--color-ink)]" />
+
+        {/* Topographic motif, felt rather than seen */}
+        <div className="contours absolute inset-0 opacity-70" />
+      </div>
+
+      {/* ---- Atmospheric glows ----
+          Raised well above the previous opacity: a 20% tint behind a 120px blur
+          is invisible against near-black. These drift on very long periods (28s
+          and 34s), far from the uncomfortable ~5s oscillation range. */}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute -left-1/4 top-[-12rem] size-[38rem] rounded-full bg-[var(--color-teal-700)]/20 blur-[120px]"
+        className="pointer-events-none absolute -left-[18%] top-[-14rem] -z-10 size-[42rem] rounded-full bg-[var(--color-teal-500)]/30 blur-[130px]"
         animate={
           reduce
             ? undefined
@@ -69,13 +95,18 @@ export function Hero() {
       />
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute -right-20 bottom-[-14rem] size-[30rem] rounded-full bg-[var(--color-accent-dim)]/12 blur-[120px]"
+        className="pointer-events-none absolute -right-[10%] bottom-[-16rem] -z-10 size-[34rem] rounded-full bg-[var(--color-accent)]/22 blur-[130px]"
         animate={
           reduce
             ? undefined
             : { transform: ["translate3d(0,0,0)", "translate3d(-2.5rem,-1.5rem,0)", "translate3d(0,0,0)"] }
         }
         transition={{ duration: 34, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Warm horizon lift along the bottom edge, like last light on the range */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-[var(--color-teal-900)]/45 to-transparent"
       />
 
       <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 pb-16 pt-32 sm:px-8 sm:pb-20 sm:pt-36 lg:grid-cols-[1.05fr_1fr] lg:gap-8">

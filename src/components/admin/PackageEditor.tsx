@@ -1,10 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Save, Plus, Trash2, ChevronUp, ChevronDown, Check } from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Save,
+  Plus,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  Check,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
+import Link from "next/link";
 import type { Package, ItineraryDay } from "@/lib/types";
 import { AdminCard } from "./AdminShell";
 import { ImageManager, type ManagedImage } from "./ImageManager";
+import { api, withToast } from "@/lib/client-api";
+import { DepartureManager } from "./DepartureManager";
 
 /**
  * Package and itinerary editor.
@@ -40,6 +53,9 @@ export function PackageEditor({ pkg }: { pkg: Package }) {
   const [gallery, setGallery] = useState<ManagedImage[]>(toManaged(pkg.gallery));
   const [days, setDays] = useState<ItineraryDay[]>(pkg.itinerary);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const [, startTransition] = useTransition();
 
   const touch = () => setSaved(false);
 
@@ -75,21 +91,28 @@ export function PackageEditor({ pkg }: { pkg: Package }) {
     touch();
   };
 
-  const pendingCount =
-    [...hero, ...gallery].filter((i) => i.pending).length +
-    days.reduce((n, d) => n + (d.images?.length ?? 0), 0) * 0;
+  const onSave = async () => {
+    setSaving(true);
+    const result = await withToast(
+      () =>
+        api<Package>(`/api/admin/packages/${pkg.slug}`, {
+          method: "PATCH",
+          json: {
+            ...form,
+            heroImage: hero[0]?.url ?? "",
+            gallery: gallery.map((g) => g.url),
+            itinerary: days,
+          },
+        }),
+      { loading: "Saving package", success: "Saved" },
+    );
+    setSaving(false);
 
-  const onSave = () => {
-    // TODO: upload any pending files to R2, then upsert packages +
-    // itinerary_days via the Supabase admin client.
-    console.info("Saving package", {
-      slug: pkg.slug,
-      form,
-      heroImage: hero[0]?.url ?? null,
-      gallery: gallery.map((g) => g.url),
-      days,
-    });
-    setSaved(true);
+    if (result) {
+      setSaved(true);
+      // Refresh so the list, dashboard counts and public pages pick this up.
+      startTransition(() => router.refresh());
+    }
   };
 
   const field =
@@ -369,27 +392,41 @@ export function PackageEditor({ pkg }: { pkg: Package }) {
         )}
       </AdminCard>
 
+      {/* Departures */}
+      <DepartureManager slug={pkg.slug} departures={pkg.departures} />
+
       {/* Save bar */}
       <div className="sticky bottom-0 -mx-1 flex flex-wrap items-center gap-3 border-t border-white/10 bg-[#0e1417]/85 px-1 py-4 backdrop-blur-lg">
         <button
           type="button"
           onClick={onSave}
-          className="pressable inline-flex items-center gap-2 rounded-xl bg-[var(--color-teal-800)] px-5 py-3 text-sm font-semibold text-[var(--color-cream)]"
+          disabled={saving}
+          className="pressable inline-flex items-center gap-2 rounded-xl bg-[var(--color-teal-800)] px-5 py-3 text-sm font-semibold text-[var(--color-cream)] disabled:opacity-60"
         >
-          <Save className="size-4" aria-hidden /> Save changes
+          {saving ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <Save className="size-4" aria-hidden />
+          )}
+          {saving ? "Saving" : "Save changes"}
         </button>
 
-        {saved && (
+        {saved && !saving && (
           <span className="inline-flex items-center gap-1.5 text-sm text-emerald-300">
             <Check className="size-4" aria-hidden />
-            Saved. Connect Supabase to persist.
+            Saved
           </span>
         )}
 
-        {pendingCount > 0 && !saved && (
-          <span className="text-sm text-amber-300">
-            {pendingCount} {pendingCount === 1 ? "photo" : "photos"} not uploaded yet.
-          </span>
+        {form.status === "published" && (
+          <Link
+            href={`/tours/${pkg.slug}`}
+            target="_blank"
+            className="pressable ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-white/60 hover:text-white"
+          >
+            View on site
+            <ExternalLink className="size-3.5" aria-hidden />
+          </Link>
         )}
       </div>
     </div>

@@ -4,7 +4,7 @@ import { Section, SectionHeading } from "@/components/ui/Section";
 import { TourFilter } from "@/components/sections/TourFilter";
 import { Faq } from "@/components/sections/Faq";
 import { ClosingCta } from "@/components/sections/ClosingCta";
-import { publishedPackages } from "@/data/packages";
+import { listPublishedPackages } from "@/lib/store/repo";
 
 export const metadata: Metadata = {
   title: "Tours",
@@ -12,7 +12,12 @@ export const metadata: Metadata = {
     "North Bengal tour packages. Treks, wildlife safaris, cultural circuits and homestays across Darjeeling, Sikkim, Dooars and Kalimpong.",
 };
 
-export default function ToursPage() {
+// Reads the live store so admin edits appear without a redeploy.
+export const dynamic = "force-dynamic";
+
+export default async function ToursPage() {
+  const packages = await listPublishedPackages();
+
   return (
     <>
       <PageHero
@@ -22,7 +27,7 @@ export default function ToursPage() {
       />
 
       <Section tone="cream">
-        <TourFilter packages={publishedPackages()} />
+        <TourFilter packages={packages} />
       </Section>
 
       <Section tone="light">
