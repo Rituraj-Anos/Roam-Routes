@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import { Hero } from "@/components/sections/Hero";
+import { FeaturedTrip } from "@/components/sections/FeaturedTrip";
 import { ParallaxImage } from "@/components/ui/ParallaxImage";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { SeasonCalendar } from "@/components/sections/SeasonCalendar";
@@ -15,7 +16,7 @@ import { TrustStats } from "@/components/ui/TrustStats";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
 import { DestinationSpotlight } from "@/components/cards/DestinationSpotlight";
 import { PackageCard } from "@/components/cards/PackageCard";
-import { ReviewCard } from "@/components/cards/ReviewCard";
+import { ReviewMarquee } from "@/components/sections/ReviewMarquee";
 import { destinations } from "@/data/destinations";
 import { homestays } from "@/data/homestays";
 import { trustStats, whyChooseUs } from "@/data/content";
@@ -32,7 +33,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [packages, reviews, rating] = await Promise.all([
     getFeaturedPackages(3),
-    getFeaturedReviews(3),
+    getFeaturedReviews(8),
     getRatingSummary(),
   ]);
 
@@ -133,7 +134,7 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* Packages */}
+      {/* Packages — lead with an editorial spotlight, then the rest as cards */}
       <Section tone="cream">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <SectionHeading
@@ -142,13 +143,22 @@ export default async function HomePage() {
           />
           <PillArrow label="All tours" href="/tours" variant="onLight" size="sm" />
         </div>
-        <RevealGroup className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {packages.map((pkg) => (
-            <RevealItem key={pkg.id}>
-              <PackageCard pkg={pkg} />
-            </RevealItem>
-          ))}
-        </RevealGroup>
+
+        {packages[0] && (
+          <div className="mt-12">
+            <FeaturedTrip pkg={packages[0]} />
+          </div>
+        )}
+
+        {packages.length > 1 && (
+          <RevealGroup className="mt-6 grid gap-6 sm:grid-cols-2">
+            {packages.slice(1).map((pkg) => (
+              <RevealItem key={pkg.id}>
+                <PackageCard pkg={pkg} />
+              </RevealItem>
+            ))}
+          </RevealGroup>
+        )}
       </Section>
 
       {/* How it works — full-width sequence */}
@@ -264,8 +274,8 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* Reviews */}
-      <Section tone="cream">
+      {/* Reviews — heading in the container, marquee full-bleed below it */}
+      <Section tone="cream" size="flush" className="pt-20 sm:pt-24 lg:pt-28">
         <SectionHeading
           title={
             rating.count > 0
@@ -275,14 +285,10 @@ export default async function HomePage() {
           intro="Verified reviews from recent trips across all four regions."
           align="center"
         />
-        <RevealGroup className="mt-12 grid gap-6 md:grid-cols-3">
-          {reviews.map((review) => (
-            <RevealItem key={review.id}>
-              <ReviewCard review={review} />
-            </RevealItem>
-          ))}
-        </RevealGroup>
       </Section>
+      <div className="bg-[var(--color-cream)] pb-20 pt-12 sm:pb-24 lg:pb-28">
+        <ReviewMarquee reviews={reviews} />
+      </div>
 
       {/* FAQ */}
       <Section tone="light">
