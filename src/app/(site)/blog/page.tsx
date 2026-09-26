@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Clock } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { Section } from "@/components/ui/Section";
 import { ClosingCta } from "@/components/sections/ClosingCta";
 import { RevealGroup, RevealItem } from "@/components/ui/Reveal";
@@ -55,10 +55,9 @@ export default async function BlogPage() {
             className="hover-lift group grid overflow-hidden rounded-[var(--radius-xl2)] bg-[var(--color-paper)] ring-1 ring-[var(--color-line)] lg:grid-cols-2"
           >
             <div className="relative aspect-[16/10] overflow-hidden lg:aspect-auto lg:min-h-[20rem]">
-              <Image
+              <SafeImage
                 src={lead.coverImage}
                 alt={lead.title}
-                fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
                 className="object-cover transition-transform duration-[700ms] ease-[var(--ease-out)] motion-safe:group-hover:scale-[1.04]"
@@ -86,10 +85,9 @@ export default async function BlogPage() {
                 className="hover-lift group flex h-full flex-col overflow-hidden rounded-[var(--radius-xl2)] bg-[var(--color-paper)] ring-1 ring-[var(--color-line)]"
               >
                 <div className="relative aspect-[16/10] overflow-hidden">
-                  <Image
+                  <SafeImage
                     src={post.coverImage}
                     alt={post.title}
-                    fill
                     sizes="(max-width: 640px) 100vw, 33vw"
                     className="object-cover transition-transform duration-[600ms] ease-[var(--ease-out)] motion-safe:group-hover:scale-[1.04]"
                   />

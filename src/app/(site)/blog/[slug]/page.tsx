@@ -36,15 +36,17 @@ export default async function BlogDetail({
   return (
     <>
       <section className="relative isolate flex min-h-[52svh] items-end overflow-hidden bg-[var(--color-ink)] pt-28">
-        <Image
-          src={post.coverImage}
-          alt=""
-          aria-hidden
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover opacity-45"
-        />
+        {post.coverImage?.trim() && (
+          <Image
+            src={post.coverImage}
+            alt=""
+            aria-hidden
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover opacity-45"
+          />
+        )}
         <div
           aria-hidden
           className="absolute inset-0 bg-gradient-to-t from-[var(--color-ink)] via-black/55 to-black/35"
